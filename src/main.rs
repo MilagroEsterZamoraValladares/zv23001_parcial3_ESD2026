@@ -73,11 +73,12 @@
  *  ademas que solo mueve el puntero, no se esta copiando
  */
 
-/* LO DE AQUI, PARA ABAJO ES SOLO EL CODIGO QUE ESTA EN EL DOCUMENTO del examen
- * #[derive(Debug, Clone)]
+/*FASE 2: */
+
+#[derive(Debug, Clone)]
 struct Vuelo {
     id: String,
-    altitud: u32, // Este será nuestra clave (key)
+    altitud: u32, // Esta será nuestra clave (key)
 }
 
 struct Nodo {
@@ -96,84 +97,94 @@ impl Nodo {
             altura: 1,
         }
     }
-}
 
-// --- UTILIDADES DE BALANCEO (NO MODIFICAR) ---
-
-fn obtener_altura(nodo: &Option<Box<Nodo>>) -> i32 {
-    nodo.as_ref().map_or(0, |n| n.altura)
-}
-
-fn actualizar_altura(nodo: &mut Nodo) {
-    nodo.altura = 1 + std::cmp::max(
-        obtener_altura(&nodo.izquierdo),
-        obtener_altura(&nodo.derecho),
-    );
-}
-
-fn obtener_balance(nodo: &Nodo) -> i32 {
-    obtener_altura(&nodo.izquierdo) - obtener_altura(&nodo.derecho)
-}
-
-fn rotar_derecha(mut y: Box<Nodo>) -> Box<Nodo> {
-    let mut x = y.izquierdo.take().expect("Error de radar");
-    y.izquierdo = x.derecho.take();
-    actualizar_altura(&mut y);
-    x.derecho = Some(y);
-    actualizar_altura(&mut x);
-    x
-}
-
-fn rotar_izquierda(mut x: Box<Nodo>) -> Box<Nodo> {
-    let mut y = x.derecho.take().expect("Error de radar");
-    x.derecho = y.izquierdo.take();
-    actualizar_altura(&mut x);
-    y.izquierdo = Some(x);
-    actualizar_altura(&mut y);
-    y
-}
-
-// --- FUNCIÓN DE INSERCIÓN ---
-
-fn insertar(nodo_opt: Option<Box<Nodo>>, vuelo: Vuelo) -> Box<Nodo> {
-    let mut nodo = match nodo_opt {
-        None => return Box::new(Nodo::nuevo(vuelo)),
-        Some(n) => n,
-    };
-
-    if vuelo.altitud < nodo.vuelo.altitud {
-        nodo.izquierdo = Some(insertar(nodo.izquierdo.take(), vuelo));
-    } else if vuelo.altitud > nodo.vuelo.altitud {
-        nodo.derecho = Some(insertar(nodo.derecho.take(), vuelo));
-    } else {
-        return nodo;
+    // --- UTILIDADES DE BALANCEO (NO MODIFICAR) ---
+    fn obtener_altura(nodo: &Option<Box<Nodo>>) -> i32 {
+        nodo.as_ref().map_or(0, |n| n.altura)
     }
 
-    actualizar_altura(&mut nodo);
-    let balance = obtener_balance(&nodo);
-
-    // Caso Izquierda-Izquierda
-    if balance > 1 && vuelo.altitud < nodo.izquierdo.as_ref().unwrap().vuelo.altitud {
-        return rotar_derecha(nodo);
-    }
-    // Caso Derecha-Derecha
-    if balance < -1 && vuelo.altitud > nodo.derecho.as_ref().unwrap().vuelo.altitud {
-        return rotar_izquierda(nodo);
-    }
-    // Caso Izquierda-Derecha
-    if balance > 1 && vuelo.altitud > nodo.izquierdo.as_ref().unwrap().vuelo.altitud {
-        let hijo_izq = nodo.izquierdo.take().unwrap();
-        nodo.izquierdo = Some(rotar_izquierda(hijo_izq));
-        return rotar_derecha(nodo);
-    }
-    // Caso Derecha-Izquierda
-    if balance < -1 && vuelo.altitud < nodo.derecho.as_ref().unwrap().vuelo.altitud {
-        let hijo_der = nodo.derecho.take().unwrap();
-        nodo.derecho = Some(rotar_derecha(hijo_der));
-        return rotar_izquierda(nodo);
+    fn actualizar_altura(nodo: &mut Nodo) {
+        nodo.altura = 1 + std::cmp::max(
+            Nodo::obtener_altura(&nodo.izquierdo),
+            Nodo::obtener_altura(&nodo.derecho),
+        );
     }
 
-    nodo
+    fn obtener_balance(nodo: &Nodo) -> i32 {
+        Nodo::obtener_altura(&nodo.izquierdo) - Nodo::obtener_altura(&nodo.derecho)
+    }
+
+    fn rotar_derecha(mut y: Box<Nodo>) -> Box<Nodo> {
+        let mut x = y.izquierdo.take().expect("Error de radar");
+        y.izquierdo = x.derecho.take();
+        Nodo::actualizar_altura(&mut y);
+        x.derecho = Some(y);
+        Nodo::actualizar_altura(&mut x);
+        x
+    }
+
+    fn rotar_izquierda(mut x: Box<Nodo>) -> Box<Nodo> {
+        let mut y = x.derecho.take().expect("Error de radar");
+        x.derecho = y.izquierdo.take();
+        Nodo::actualizar_altura(&mut x);
+        y.izquierdo = Some(x);
+        Nodo::actualizar_altura(&mut y);
+        y
+    }
+
+    fn insertar(nodo_opt: Option<Box<Nodo>>, vuelo: Vuelo) -> Box<Nodo> {
+        let mut nodo = match nodo_opt {
+            None => return Box::new(Nodo::nuevo(vuelo)),
+            Some(n) => n,
+        };
+
+        let altitud_vuelo = vuelo.altitud;
+
+        if altitud_vuelo < nodo.vuelo.altitud {
+            nodo.izquierdo = Some(Nodo::insertar(nodo.izquierdo.take(), vuelo));
+        } else if altitud_vuelo > nodo.vuelo.altitud {
+            nodo.derecho = Some(Nodo::insertar(nodo.derecho.take(), vuelo));
+        } else {
+            return nodo;
+        }
+
+        Nodo::actualizar_altura(&mut nodo);
+        let balance = Nodo::obtener_balance(&nodo);
+
+        if balance > 1 && altitud_vuelo < nodo.izquierdo.as_ref().unwrap().vuelo.altitud {
+            return Nodo::rotar_derecha(nodo);
+        }
+        if balance < -1 && altitud_vuelo > nodo.derecho.as_ref().unwrap().vuelo.altitud {
+            return Nodo::rotar_izquierda(nodo);
+        }
+        if balance > 1 && altitud_vuelo > nodo.izquierdo.as_ref().unwrap().vuelo.altitud {
+            let hijo_izq = nodo.izquierdo.take().unwrap();
+            nodo.izquierdo = Some(Nodo::rotar_izquierda(hijo_izq));
+            return Nodo::rotar_derecha(nodo);
+        }
+        if balance < -1 && altitud_vuelo < nodo.derecho.as_ref().unwrap().vuelo.altitud {
+            let hijo_der = nodo.derecho.take().unwrap();
+            nodo.derecho = Some(Nodo::rotar_derecha(hijo_der));
+            return Nodo::rotar_izquierda(nodo);
+        }
+
+        nodo
+    }
+    /*esta es la funcion de la fase 2..2.1.firma y 2.2.Restriccion */
+    fn buscar_vuelo(nodo: &Option<Box<Nodo>>, altitud: u32) -> Option<&Vuelo> {
+        match nodo {
+            None => None,
+            Some(nodo_ref) => {
+                if altitud == nodo_ref.vuelo.altitud {
+                    Some(&nodo_ref.vuelo)
+                } else if altitud < nodo_ref.vuelo.altitud {
+                    Nodo::buscar_vuelo(&nodo_ref.izquierdo, altitud)
+                } else {
+                    Nodo::buscar_vuelo(&nodo_ref.derecho, altitud)
+                }
+            }
+        }
+    }
 }
 
 fn main() {
@@ -194,10 +205,20 @@ fn main() {
             id: id.to_string(),
             altitud: alt,
         };
-        radar = Some(insertar(radar.take(), v));
+        radar = Some(Nodo::insertar(radar.take(), v));
     }
 
     println!("--- Radar de Control Aéreo (AVL) ---");
-    // Aquí el estudiante debe invocar sus funciones de búsqueda y eliminación
+
+    //FASE 2
+    println!("\n--- Búsqueda de vuelos ---");
+
+    let alturas_buscar = [4000, 2000, 4500];
+
+    for &alt in &alturas_buscar {
+        match Nodo::buscar_vuelo(&radar, alt) {
+            Some(vuelo) => println!("Encontrado: {} a {} pies", vuelo.id, vuelo.altitud),
+            None => println!("No encontrado: {} pies", alt),
+        }
+    }
 }
-*/
