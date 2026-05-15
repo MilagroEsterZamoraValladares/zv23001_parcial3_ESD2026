@@ -254,6 +254,18 @@ impl Nodo {
 
         Some(nodo)
     }
+
+    //fase 4
+    /*yo elegi la opcion B */
+    fn vuelo_mas_bajo(nodo: &Option<Box<Nodo>>) -> Option<&Vuelo> {
+        let mut actual = nodo.as_ref()?;
+
+        while let Some(ref izquierdo) = actual.izquierdo {
+            actual = izquierdo;
+        }
+
+        Some(&actual.vuelo)
+    }
 }
 
 fn main() {
@@ -313,5 +325,15 @@ fn main() {
             Some(vuelo) => println!("{} volando a {} pies", vuelo.id, vuelo.altitud),
             None => println!("No hay vuelo a {} pies", alt),
         }
+    }
+
+    //FASE 4
+    println!("\n--- FASE 4: ELEGI OPCION B ---");
+    match Nodo::vuelo_mas_bajo(&radar) {
+        Some(vuelo) => println!(
+            "EMERGENCIA: Vuelo más cercano a tierra es {} a {} pies",
+            vuelo.id, vuelo.altitud
+        ),
+        None => println!("No hay vuelos en el radar"),
     }
 }
